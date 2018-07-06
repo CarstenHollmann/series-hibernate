@@ -3,25 +3,6 @@
     xmlns="http://www.hibernate.org/xsd/hibernate-mapping"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.hibernate.org/xsd/hibernate-mapping http://www.hibernate.org/xsd/hibernate-mapping/hibernate-mapping-4.0.xsd">
-    <class name="AbstractFeatureEntity" abstract="true" table="feature">
-        <comment>Storage of the features (OfInterest).</comment>
-        <id name="id" type="long">
-            <column name="feature_id">
-                <comment>PK column of the table</comment>
-            </column>
-            <generator class="native">
-                <param name="sequence_name">feature_seq</param>
-            </generator>
-        </id>
-        <!-- Comments for the translations are defined below! -->
-        <set name="translations" table="feature_i18n" inverse="true" fetch="select">
-            <key column="fk_feature_id" not-null="true" />
-            <one-to-many class="org.n52.series.db.beans.i18n.I18nFeatureEntity" />
-        </set>
-
-
-    </class>
-
     <class name="org.n52.series.db.beans.i18n.I18nFeatureEntity" table="feature_i18n">
         <comment>Storage for internationalizations of features.</comment>
         <id name="id" type="long">

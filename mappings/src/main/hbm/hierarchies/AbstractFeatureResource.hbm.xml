@@ -32,10 +32,5 @@
             <key column="fk_parent_feature_id" not-null="true" foreign-key="fk_feature_parent" />
             <many-to-many class="AbstractFeatureEntity" column="fk_child_feature_id" foreign-key="fk_feature_child"/>
         </set>
-        <subclass name="FeatureEntity"
-              extends="AbstractFeatureEntity"
-              discriminator-value="null">
-        </subclass>
-
     </class>
 </hibernate-mapping>

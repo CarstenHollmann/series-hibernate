@@ -140,12 +140,5 @@
             </column>
         </property>
 
-        <subclass extends="DataEntity" name="QuantityDataEntity" discriminator-value="quantity">
-            <property name="value" type="big_decimal" precision="20" scale="10">
-                <column name="value_quantity">
-                    <comment>The quantity value of an observation (Measruement)</comment>
-                </column>
-            </property>
-        </subclass>
     </class>
 </hibernate-mapping>
