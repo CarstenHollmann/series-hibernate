@@ -32,12 +32,17 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
+
+import org.atteo.xmlcombiner.XmlCombiner;
 import org.hibernate.MappingException;
 import org.hibernate.boot.Metadata;
 import org.hibernate.boot.MetadataSources;
@@ -58,14 +63,15 @@ import org.hibernate.tool.schema.TargetType;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.n52.hibernate.type.SmallBooleanType;
+import org.xml.sax.SAXException;
 
 //import hibernate.spatial.dialect.oracle.OracleSpatial10gDoubleFloatDialect;
 
 // https://github.com/atteo/xml-combiner
 
 /**
- * Class to generate the create and drop scripts for different databases. Currently supported spatial
- * databases to create scripts
+ * Class to generate the create and drop scripts for different databases.
+ * Currently supported spatial databases to create scripts
  * <ul>
  * <li>PostgreSQL/PostGIS</li>
  * <li>Oracle</li>
@@ -84,16 +90,11 @@ public class SQLScriptGenerator {
     }
 
     enum DialectSelector {
-        POSTGIS,
-        ORACLE,
-        GEODB,
-        MY_SQL_SPATIAL_5,
-        SQL_SERVER_2008;
+        POSTGIS, ORACLE, GEODB, MY_SQL_SPATIAL_5, SQL_SERVER_2008;
 
         @Override
         public String toString() {
-            return name().replaceAll("_", "-")
-                         .toLowerCase();
+            return name().replaceAll("_", "-").toLowerCase();
         }
     }
 
@@ -103,12 +104,14 @@ public class SQLScriptGenerator {
             return new PostgisPG95Dialect();
         case ORACLE:
             // try {
-            //   return new OracleSpatial10gDialect();
+            // return new OracleSpatial10gDialect();
             // } catch (ExceptionInInitializerError eiie) {
             // printToScreen("The Oracle JDBC driver is missing!");
-            // printToScreen("To execute the SQL script generator for Oracle you have to uncomment the
+            // printToScreen("To execute the SQL script generator for Oracle you
+            // have to uncomment the
             // dependency in the pom.xml.");
-            // printToScreen("If the Oracle JDBC driver is not installed in your local Maven repository, ");
+            // printToScreen("If the Oracle JDBC driver is not installed in your
+            // local Maven repository, ");
             // printToScreen("follow the first steps describes here: ");
             // printToScreen("https://wiki.52north.org/bin/view/SensorWeb/SensorObservationServiceIVDocumentation#Oracle_support.");
             // throw new MissingDriverException();
@@ -128,7 +131,7 @@ public class SQLScriptGenerator {
     private void setDirectoriesForModelSelection(Concept concept, Configuration configuration,
             MetadataSources metadataSources) throws Exception {
         List<File> files = new LinkedList<>();
-         files.add(getDirectory("/hbm/core"));
+        // files.add(getDirectory("/hbm/core"));
         for (File file : files) {
             if (configuration != null) {
                 configuration.addDirectory(file);
@@ -141,17 +144,11 @@ public class SQLScriptGenerator {
     }
 
     enum Concept {
-        Simple,
-        Default,
-        EReporting,
-        FullWithoutFeature,
-        Full,
-        WV;
+        Simple, Default, EReporting, FullWithoutFeature, Full, WV;
 
         @Override
         public String toString() {
-            return name().replaceAll("_", "-")
-                         .toLowerCase();
+            return name().replaceAll("_", "-").toLowerCase();
         }
     }
 
@@ -159,46 +156,65 @@ public class SQLScriptGenerator {
             throws Exception {
         switch (concept) {
         case Simple:
-            add(configuration, metadataSources, "dataset", "datasetType");
+            processFiles("core", "dataset", "datasetType");
             break;
         case Default:
-            add(configuration, metadataSources, "dataset", "datasetType", "expandedDataset", "datatypes");
+            processFiles("core", "dataset", "datasetType", "expandedDataset", "datatypes");
             break;
         case EReporting:
-            add(configuration, metadataSources, "ereporting");
+            processFiles("ereporting");
             break;
         case WV:
-            add(configuration, metadataSources, "dataset", "referencedDataset", "translations");
+            processFiles("core", "dataset", "referencedDataset", "translations");
             break;
         case FullWithoutFeature:
-            add(configuration, metadataSources, "dataset", "datatypes", "expandedDataset", "hierarchies",
-                    "metadata", "parameter", "procedureHistory", "referencedDataset", "relations", "transactional",
-                    "translations");
+            processFiles("core", "dataset", "datatypes", "expandedDataset", "hierarchies", "metadata", "parameter",
+                    "procedureHistory", "referencedDataset", "relations", "transactional", "translations");
             break;
         case Full:
-            add(configuration, metadataSources, "dataset", "datatypes", "expandedDataset", "hierarchies",
-                    "metadata", "parameter", "procedureHistory", "referencedDataset", "relations", "transactional",
-                    "translations", "feature");
+            processFiles("core", "dataset", "datatypes", "expandedDataset", "hierarchies", "metadata", "parameter",
+                    "procedureHistory", "referencedDataset", "relations", "transactional", "translations", "feature");
             break;
         default:
             throw new Exception("The entered value is invalid: " + concept);
         }
+        add(configuration, metadataSources);
     }
 
-    private void add(Configuration configuration, MetadataSources metadataSources, String...string) throws MappingException, URISyntaxException {
-       for (String s : string) {
-           if (configuration != null) {
-               configuration.addDirectory(getDirectory("/hbm/" + s));
-           }
-           if (metadataSources != null) {
-               metadataSources.addDirectory(getDirectory("/hbm/" + s));
-           }
-       }
+    private void processFiles(String... string) {
+        try {
+            Map<Path, List<Path>> files = new LinkedHashMap<>();
+            for (String dir : string) {
+                List<Path> fileNamesList = new LinkedList<>();
+                getAllFiles(getDirectory("/hbm/" + dir), fileNamesList);
+                for (Path path : fileNamesList) {
+                    if (!files.containsKey(path.getFileName())) {
+                        files.put(path.getFileName(), new LinkedList<>());
+                    }
+                    files.get(path.getFileName()).add(path);
+                }
+            }
+            for (Entry<Path, List<Path>> f : files.entrySet()) {
+                combine(f.getValue());
+            }
+
+        } catch (IOException | URISyntaxException | TransformerException | ParserConfigurationException
+                | SAXException e1) {
+        }
+    }
+
+    private void add(Configuration configuration, MetadataSources metadataSources)
+            throws MappingException, URISyntaxException {
+        if (configuration != null) {
+            configuration.addDirectory(new File(Paths.get("target/test").toAbsolutePath().toString()));
+        }
+        if (metadataSources != null) {
+            metadataSources.addDirectory(new File(Paths.get("target/test").toAbsolutePath().toString()));
+        }
     }
 
     private static File getDirectory(String path) throws URISyntaxException {
-        return new File(SQLScriptGenerator.class.getResource(path)
-                                                .toURI());
+        return new File(SQLScriptGenerator.class.getResource(path).toURI());
     }
 
     private int getSelection() throws IOException {
@@ -231,9 +247,7 @@ public class SQLScriptGenerator {
     private int readSelectionFromStdIo() throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in, Charset.forName("UTF-8")));
         String selection = br.readLine();
-        return (selection != null && !selection.isEmpty())
-                ? Integer.parseInt(selection)
-                : -1;
+        return (selection != null && !selection.isEmpty()) ? Integer.parseInt(selection) : -1;
     }
 
     // private int getModelSelection() throws IOException {
@@ -244,7 +258,8 @@ public class SQLScriptGenerator {
     // printToScreen("");
     // printToScreen("Enter your selection: ");
     //
-    // BufferedReader br = new BufferedReader(new InputStreamReader(System.in, Charset.forName("UTF-8")));
+    // BufferedReader br = new BufferedReader(new InputStreamReader(System.in,
+    // Charset.forName("UTF-8")));
     // String selection = null;
     // selection = br.readLine();
     // return Integer.parseInt(selection);
@@ -290,9 +305,8 @@ public class SQLScriptGenerator {
     }
 
     private Set<String> checkSchema(Dialect dia, String[] create) {
-        String hexStringToCheck = new StringBuilder("FK").append(Integer.toHexString("observationHasOffering".hashCode())
-                                                                        .toUpperCase())
-                                                         .toString();
+        String hexStringToCheck = new StringBuilder("FK")
+                .append(Integer.toHexString("observationHasOffering".hashCode()).toUpperCase()).toString();
         boolean duplicate = false;
         List<String> checkedSchema = new LinkedList<>();
         for (String string : create) {
@@ -308,9 +322,54 @@ public class SQLScriptGenerator {
         return new LinkedHashSet<>(checkedSchema);
     }
 
+    private void combine(List<Path> files)
+            throws IOException, TransformerException, ParserConfigurationException, SAXException {
+        XmlCombiner combiner = new XmlCombiner();
+        String fileName = "";
+        if (files != null) {
+            for (Path path : files) {
+                if (path != null && !Files.isDirectory(path)) {
+                    if (fileName.isEmpty()) {
+                        fileName = path.getFileName().toString();
+                    }
+                    combiner.combine(path);
+                }
+            }
+        }
+        Path dir = Paths.get("target/test");
+        if (!Files.exists(dir)) {
+            dir = Files.createDirectories(Paths.get("target/test"));
+        }
+        Path path = Paths.get(dir.toString(), fileName);
+        if (!Files.exists(path)) {
+            path = Files.createFile(path);
+            combiner.buildDocument(path);
+        }
+        
+    }
+
+    public void getAllFiles(File file, List<Path> files) {
+        File[] l = file.listFiles();
+        if (l != null) {
+            for (File f : l) {
+                if (f.isFile()) {
+                    files.add(Paths.get(f.getAbsolutePath()));
+                } else if (f.isDirectory()) {
+                    getAllFiles(f.getAbsolutePath(), files);
+                }
+            }
+        }
+    }
+
+    public void getAllFiles(String directoryName, List<Path> files) {
+        getAllFiles(new File(directoryName), files);
+    }
+
     public static void main(String[] args) {
+        SQLScriptGenerator sqlScriptGenerator = new SQLScriptGenerator();
+
         try {
-            SQLScriptGenerator sqlScriptGenerator = new SQLScriptGenerator();
+            // Files.deleteIfExists(Paths.get("target/test"));
             int select = sqlScriptGenerator.getSelection();
             if (select == 1) {
                 String schema = "public";
@@ -335,12 +394,14 @@ public class SQLScriptGenerator {
             } else if (select == 2) {
                 try {
                     int dialectSelection = sqlScriptGenerator.getDialectSelection();
-                    // int modelSelection = sqlScriptGenerator.getModelSelection();
+                    // int modelSelection =
+                    // sqlScriptGenerator.getModelSelection();
                     int modelSelection = -1;
                     int concept = sqlScriptGenerator.getConceptSelection();
                     String schema = sqlScriptGenerator.getSchema();
                     int generationType = sqlScriptGenerator.getGenerationType();
-                    sqlScriptGenerator.execute(sqlScriptGenerator, dialectSelection, modelSelection, concept, generationType, schema);
+                    sqlScriptGenerator.execute(sqlScriptGenerator, dialectSelection, modelSelection, concept,
+                            generationType, schema);
                 } catch (IOException ioe) {
                     printToScreen("ERROR: IO error trying to read your input!");
                     System.exit(1);
@@ -406,51 +467,47 @@ public class SQLScriptGenerator {
         }
     }
 
-    private void execute(SQLScriptGenerator sqlScriptGenerator,
-                                int dialectSelection,
-                                int modelSelection,
-                                int conceptSelection,
-                                int generationType,
-                                String schema)
-            throws Exception {
-            Concept concept = Concept.values()[conceptSelection];
-            Configuration configuration = new Configuration().configure("/hibernate.cfg.xml");
-            DialectSelector dialect = DialectSelector.values()[dialectSelection];
-            Dialect dia = sqlScriptGenerator.getDialect(dialect);
-            Properties p = new Properties();
-            p.put("hibernate.dialect", dia.getClass().getName());
-            String fileNameCreate = "target/" + dialect + "_" + concept + "_create.sql";
-            String fileNameDrop = "target/" + dialect + "_" + concept + "_drop.sql";
-            Files.deleteIfExists(Paths.get(fileNameCreate));
-            Files.deleteIfExists(Paths.get(fileNameDrop));
-            if (schema != null && !schema.isEmpty()) {
-                p.put("hibernate.default_schema", schema);
-            }
-            configuration.addProperties(p);
-            sqlScriptGenerator.setDirectoriesForModelSelection(concept, configuration, null);
-            configuration.registerTypeOverride(SmallBooleanType.INSTANCE);
+    private void execute(SQLScriptGenerator sqlScriptGenerator, int dialectSelection, int modelSelection,
+            int conceptSelection, int generationType, String schema) throws Exception {
+        Concept concept = Concept.values()[conceptSelection];
+        Configuration configuration = new Configuration().configure("/hibernate.cfg.xml");
+        DialectSelector dialect = DialectSelector.values()[dialectSelection];
+        Dialect dia = sqlScriptGenerator.getDialect(dialect);
+        Properties p = new Properties();
+        p.put("hibernate.dialect", dia.getClass().getName());
+        String fileNameCreate = "target/" + dialect + "_" + concept + "_create.sql";
+        String fileNameDrop = "target/" + dialect + "_" + concept + "_drop.sql";
+        Files.deleteIfExists(Paths.get(fileNameCreate));
+        Files.deleteIfExists(Paths.get(fileNameDrop));
+        if (schema != null && !schema.isEmpty()) {
+            p.put("hibernate.default_schema", schema);
+        }
+        configuration.addProperties(p);
+        sqlScriptGenerator.setDirectoriesForModelSelection(concept, configuration, null);
+        configuration.registerTypeOverride(SmallBooleanType.INSTANCE);
 
-            configuration.buildSessionFactory();
-            StandardServiceRegistry serviceRegistry = configuration.getStandardServiceRegistryBuilder().applySettings(configuration.getProperties()).build();
+        configuration.buildSessionFactory();
+        StandardServiceRegistry serviceRegistry =
+                configuration.getStandardServiceRegistryBuilder().applySettings(configuration.getProperties()).build();
 
-            MetadataSources metadataSources = new MetadataSources(serviceRegistry);
-            sqlScriptGenerator.setDirectoriesForModelSelection(concept, null, metadataSources);
-            Metadata metadata = metadataSources.buildMetadata();
+        MetadataSources metadataSources = new MetadataSources(serviceRegistry);
+        sqlScriptGenerator.setDirectoriesForModelSelection(concept, null, metadataSources);
+        Metadata metadata = metadataSources.buildMetadata();
 
-            if (generationType == 0) {
-              // create script
-              SchemaExport schemaExport = new SchemaExport();
-              EnumSet<TargetType> targetTypes = EnumSet.of(TargetType.SCRIPT, TargetType.STDOUT);
-              schemaExport.setDelimiter(";").setFormat(true).setOutputFile(fileNameCreate).setHaltOnError(false);
-              schemaExport.execute(targetTypes, SchemaExport.Action.CREATE, metadata);
-              printToScreen("Finished! Check for file: " + fileNameCreate + "\n");
-              // create drop
-              schemaExport.setOutputFile(fileNameDrop);
-              schemaExport.execute(targetTypes, SchemaExport.Action.DROP, metadata);
-              printToScreen("Finished! Check for file: " + fileNameDrop + "\n");
-            } else {
-                sqlScriptGenerator.exportTableColumnMetadata(metadata, dia, concept);
-            }
+        if (generationType == 0) {
+            // create script
+            SchemaExport schemaExport = new SchemaExport();
+            EnumSet<TargetType> targetTypes = EnumSet.of(TargetType.SCRIPT, TargetType.STDOUT);
+            schemaExport.setDelimiter(";").setFormat(true).setOutputFile(fileNameCreate).setHaltOnError(false);
+            schemaExport.execute(targetTypes, SchemaExport.Action.CREATE, metadata);
+            printToScreen("Finished! Check for file: " + fileNameCreate + "\n");
+            // create drop
+            schemaExport.setOutputFile(fileNameDrop);
+            schemaExport.execute(targetTypes, SchemaExport.Action.DROP, metadata);
+            printToScreen("Finished! Check for file: " + fileNameDrop + "\n");
+        } else {
+            sqlScriptGenerator.exportTableColumnMetadata(metadata, dia, concept);
+        }
 
     }
 
@@ -461,15 +518,17 @@ public class SQLScriptGenerator {
         List<String> result = new LinkedList<>();
         result.add("# Database table/column description");
         result.add("This page describes the tables and columns in the database.");
-        result.add("The *SQL type* column in the tables is generated for Hibernate dialect: *" + dia.getClass().getSimpleName() + "*");
+        result.add("The *SQL type* column in the tables is generated for Hibernate dialect: *"
+                + dia.getClass().getSimpleName() + "*");
         result.add("");
         result.add("## Tables");
         map.keySet().forEach(k -> result.add("- [" + k + "](#" + k + ")"));
         result.add("");
         result.addAll(map.values().stream().map(v -> v.toMarkdown()).collect(Collectors.toList()));
         result.add("");
-        result.add("*Creation date: " +  DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss ZZ").print(DateTime.now()) + "*");
-        System.out.println("The generated file was written to: " + Files.write(path,result).toAbsolutePath());
+        result.add(
+                "*Creation date: " + DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss ZZ").print(DateTime.now()) + "*");
+        System.out.println("The generated file was written to: " + Files.write(path, result).toAbsolutePath());
     }
 
     private SortedMap<String, TableMetadata> extractTableMetadata(Metadata metadata, Dialect dia) {
@@ -494,7 +553,8 @@ public class SQLScriptGenerator {
 
     }
 
-    private void processJoins(Iterator<Join> ji, SortedMap<String, TableMetadata> map, Dialect dia, Metadata metadata) {
+    private void processJoins(Iterator<Join> ji, SortedMap<String, TableMetadata> map, Dialect dia,
+            Metadata metadata) {
         if (ji != null) {
             while (ji.hasNext()) {
                 processTable(ji.next().getTable(), map, dia, metadata);
@@ -502,7 +562,8 @@ public class SQLScriptGenerator {
         }
     }
 
-    private void processCollection(org.hibernate.mapping.Collection collection, SortedMap<String, TableMetadata> map, Dialect dia, Metadata metadata) {
+    private void processCollection(org.hibernate.mapping.Collection collection, SortedMap<String, TableMetadata> map,
+            Dialect dia, Metadata metadata) {
         Table table = collection.getCollectionTable();
         if (table != null) {
             if (!map.containsKey(table.getName())) {
@@ -515,7 +576,8 @@ public class SQLScriptGenerator {
         }
     }
 
-    private TableMetadata processTable(Table table, SortedMap<String, TableMetadata> map, Dialect dia, Metadata metadata) {
+    private TableMetadata processTable(Table table, SortedMap<String, TableMetadata> map, Dialect dia,
+            Metadata metadata) {
         if (!map.containsKey(table.getName())) {
             map.put(table.getName(), new TableMetadata(table.getName(), table.getComment()));
         }
@@ -547,14 +609,17 @@ public class SQLScriptGenerator {
     public interface Meta {
 
         default String check(String origin, String current) {
-            return (origin != null && !origin.isEmpty()) ? origin : (current != null && !current.isEmpty()) ? current : null;
+            return (origin != null && !origin.isEmpty()) ? origin
+                    : (current != null && !current.isEmpty()) ? current : null;
         }
 
     }
 
     public static class TableMetadata implements Meta {
         private final String name;
+
         private final String comment;
+
         private Map<String, ColumnMetadata> columns = new LinkedHashMap<>();
 
         public TableMetadata(String name, String comment) {
@@ -605,14 +670,19 @@ public class SQLScriptGenerator {
 
     public static class ColumnMetadata implements Meta {
         private final String name;
+
         private String comment;
+
         private String sqlType;
+
         private String type;
+
         private String defaultValue;
+
         private String notNull;
 
         public ColumnMetadata(String name) {
-           this.name = name;
+            this.name = name;
         }
 
         public String getName() {
