@@ -38,6 +38,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+import org.hibernate.MappingException;
 import org.hibernate.boot.Metadata;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistry;
@@ -48,7 +49,6 @@ import org.hibernate.mapping.Join;
 import org.hibernate.mapping.PersistentClass;
 import org.hibernate.mapping.Property;
 import org.hibernate.mapping.Table;
-import org.hibernate.mapping.Value;
 import org.hibernate.spatial.dialect.h2geodb.GeoDBDialect;
 import org.hibernate.spatial.dialect.mysql.MySQL56SpatialDialect;
 import org.hibernate.spatial.dialect.postgis.PostgisPG95Dialect;
@@ -60,6 +60,8 @@ import org.joda.time.format.DateTimeFormat;
 import org.n52.hibernate.type.SmallBooleanType;
 
 //import hibernate.spatial.dialect.oracle.OracleSpatial10gDoubleFloatDialect;
+
+// https://github.com/atteo/xml-combiner
 
 /**
  * Class to generate the create and drop scripts for different databases. Currently supported spatial
@@ -127,8 +129,6 @@ public class SQLScriptGenerator {
             MetadataSources metadataSources) throws Exception {
         List<File> files = new LinkedList<>();
          files.add(getDirectory("/hbm/core"));
-//         files.add(getDirectory("/hbm/feature"));
-//         files.add(getDirectory("/hbm/extension"));
         for (File file : files) {
             if (configuration != null) {
                 configuration.addDirectory(file);
@@ -141,8 +141,12 @@ public class SQLScriptGenerator {
     }
 
     enum Concept {
-        DEFAULT,
-        E_REPORTING;
+        Simple,
+        Default,
+        EReporting,
+        FullWithoutFeature,
+        Full,
+        WV;
 
         @Override
         public String toString() {
@@ -154,27 +158,42 @@ public class SQLScriptGenerator {
     private void addConceptDirectories(Concept concept, Configuration configuration, MetadataSources metadataSources)
             throws Exception {
         switch (concept) {
-        case DEFAULT:
-            if (configuration != null) {
-                configuration.addDirectory(getDirectory("/hbm/dataset"));
-            }
-            if (metadataSources != null) {
-                metadataSources.addDirectory(getDirectory("/hbm/dataset"));
-            }
+        case Simple:
+            add(configuration, metadataSources, "dataset", "datasetType");
             break;
-        case E_REPORTING:
-
-            if (configuration != null) {
-                configuration.addDirectory(getDirectory("/hbm/ereporting"));
-            }
-            if (metadataSources != null) {
-                metadataSources.addDirectory(getDirectory("/hbm/ereporting"));
-            }
-
+        case Default:
+            add(configuration, metadataSources, "dataset", "datasetType", "expandedDataset", "datatypes");
+            break;
+        case EReporting:
+            add(configuration, metadataSources, "ereporting");
+            break;
+        case WV:
+            add(configuration, metadataSources, "dataset", "referencedDataset", "translations");
+            break;
+        case FullWithoutFeature:
+            add(configuration, metadataSources, "dataset", "datatypes", "expandedDataset", "hierarchies",
+                    "metadata", "parameter", "procedureHistory", "referencedDataset", "relations", "transactional",
+                    "translations");
+            break;
+        case Full:
+            add(configuration, metadataSources, "dataset", "datatypes", "expandedDataset", "hierarchies",
+                    "metadata", "parameter", "procedureHistory", "referencedDataset", "relations", "transactional",
+                    "translations", "feature");
             break;
         default:
             throw new Exception("The entered value is invalid: " + concept);
         }
+    }
+
+    private void add(Configuration configuration, MetadataSources metadataSources, String...string) throws MappingException, URISyntaxException {
+       for (String s : string) {
+           if (configuration != null) {
+               configuration.addDirectory(getDirectory("/hbm/" + s));
+           }
+           if (metadataSources != null) {
+               metadataSources.addDirectory(getDirectory("/hbm/" + s));
+           }
+       }
     }
 
     private static File getDirectory(String path) throws URISyntaxException {
@@ -186,7 +205,10 @@ public class SQLScriptGenerator {
         printToScreen("Create a all or a single selected script:");
         printToScreen("1   all");
         printToScreen("2   Select script");
-        printToScreen("3   table metadata (core, pg)");
+        printToScreen("3   table metadata (simple, pg)");
+        printToScreen("4   table metadata (default, pg)");
+        printToScreen("5   table metadata (wv, pg)");
+        printToScreen("6   table metadata (full without feature, pg)");
         printToScreen("");
         printToScreen("Enter your selection: ");
 
@@ -230,8 +252,12 @@ public class SQLScriptGenerator {
 
     private int getConceptSelection() throws IOException {
         printToScreen("Which observation concept should be created:");
-        printToScreen("0   series");
-        printToScreen("1   ereporting");
+        printToScreen("0   simple");
+        printToScreen("1   default");
+        printToScreen("2   full without feature");
+        printToScreen("3   full");
+        printToScreen("4   ereporting");
+        printToScreen("4   WV");
         printToScreen("");
         printToScreen("Enter your selection: ");
 
@@ -323,9 +349,33 @@ public class SQLScriptGenerator {
                     e.printStackTrace();
                     System.exit(1);
                 }
-            } else {
+            } else if (select == 3) {
                 try {
                     sqlScriptGenerator.execute(sqlScriptGenerator, 0, -1, 0, 1, "");
+                } catch (Exception e) {
+                    printToScreen("ERROR: " + e.getMessage());
+                    e.printStackTrace();
+                    System.exit(1);
+                }
+            } else if (select == 4) {
+                try {
+                    sqlScriptGenerator.execute(sqlScriptGenerator, 0, -1, 1, 1, "");
+                } catch (Exception e) {
+                    printToScreen("ERROR: " + e.getMessage());
+                    e.printStackTrace();
+                    System.exit(1);
+                }
+            } else if (select == 5) {
+                try {
+                    sqlScriptGenerator.execute(sqlScriptGenerator, 0, -1, 5, 1, "");
+                } catch (Exception e) {
+                    printToScreen("ERROR: " + e.getMessage());
+                    e.printStackTrace();
+                    System.exit(1);
+                }
+            } else {
+                try {
+                    sqlScriptGenerator.execute(sqlScriptGenerator, 0, -1, 3, 1, "");
                 } catch (Exception e) {
                     printToScreen("ERROR: " + e.getMessage());
                     e.printStackTrace();
@@ -399,13 +449,13 @@ public class SQLScriptGenerator {
               schemaExport.execute(targetTypes, SchemaExport.Action.DROP, metadata);
               printToScreen("Finished! Check for file: " + fileNameDrop + "\n");
             } else {
-                sqlScriptGenerator.exportTableColumnMetadata(metadata, dia);
+                sqlScriptGenerator.exportTableColumnMetadata(metadata, dia, concept);
             }
 
     }
 
-    private void exportTableColumnMetadata(Metadata metadata, Dialect dia) throws IOException {
-        Path path = Paths.get("target/TableMetadata.md");
+    private void exportTableColumnMetadata(Metadata metadata, Dialect dia, Concept concept) throws IOException {
+        Path path = Paths.get("target/" + concept.name() + "TableMetadata.md");
         Files.deleteIfExists(path);
         SortedMap<String, TableMetadata> map = extractTableMetadata(metadata, dia);
         List<String> result = new LinkedList<>();
@@ -475,7 +525,7 @@ public class SQLScriptGenerator {
         processColumns(table.getColumnIterator(), columns, dia, metadata);
         return tm;
     }
-    
+
     private void processColumns(Iterator<?> ci, Map<String, ColumnMetadata> columns, Dialect dia, Metadata metadata) {
         while (ci.hasNext()) {
             Object n = ci.next();
@@ -546,7 +596,7 @@ public class SQLScriptGenerator {
             builder.append("\n[top](#Tables)\n");
             return builder.toString();
         }
-        
+
         private String checkForNullOrEmpty(String value) {
             return value != null && !value.isEmpty() ? value : "-";
         }
