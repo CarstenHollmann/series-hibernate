@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hibernate-mapping package="org.n52.series.db.beans"
+    xmlns="http://www.hibernate.org/xsd/hibernate-mapping"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.hibernate.org/xsd/hibernate-mapping http://www.hibernate.org/xsd/hibernate-mapping/hibernate-mapping-4.0.xsd">
+        <subclass extends="DataEntity" name="TextDataEntity" discriminator-value="text">
+            <property name="value" type="string">
+                <column name="value_text">
+                    <comment>The textual value of an observation (TextObservation))</comment>
+                </column>
+            </property>
+        </subclass>
+
+        <subclass extends="DataEntity" name="ReferencedDataEntity" discriminator-value="referenced">
+            <property name="value" type="string">
+                <column name="value_referenced">
+                    <comment>The reference value (URI) of an observation (ReferencedObservation)</comment>
+                </column>
+            </property>
+        </subclass>
+
+        <subclass extends="DataEntity" name="CountDataEntity" discriminator-value="count">
+            <property name="value" type="integer">
+                <column name="value_count">
+                    <comment>The count/integer value of an observation (CountObservation)</comment>
+                </column>
+            </property>
+        </subclass>
+
+        <subclass name="BooleanDataEntity" extends="DataEntity" discriminator-value="boolean">
+        	<property name="value" type="org.n52.hibernate.type.SmallBooleanType">
+                <column name="value_boolean">
+                    <comment>The boolean value of an observation (Boolean/TruthObservation)</comment>
+                </column>
+            </property>
+        </subclass>
+
+        <subclass name="CategoryDataEntity" extends="DataEntity" discriminator-value="category">
+        	<property name="value" type="string">
+                <column name="value_category">
+                    <comment>The categorical value of an observation (CategoryObervation)</comment>
+                </column>
+            </property>
+        </subclass>
+
+        <subclass name="GeometryDataEntity" extends="DataEntity" discriminator-value="geometry">
+            <component class="GeometryEntity" name="geometryEntity">
+                <!--
+                <property column="value_lat" name="lat" type="big_decimal" precision="20" scale="10" />
+                <property column="value_lon" name="lon" type="big_decimal" precision="20" scale="10" />
+                -->
+                <property name="geometry" type="jts_geometry">
+                <column name="value_quantity">
+                    <comment>The geometry value of an observation (GeometryObservation)</comment>
+                </column>
+            </property>
+            </component>
+        </subclass>
+</hibernate-mapping>

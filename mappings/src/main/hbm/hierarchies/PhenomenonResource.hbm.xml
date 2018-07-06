@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hibernate-mapping package="org.n52.series.db.beans"
+    xmlns="http://www.hibernate.org/xsd/hibernate-mapping"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.hibernate.org/xsd/hibernate-mapping http://www.hibernate.org/xsd/hibernate-mapping/hibernate-mapping-4.0.xsd">
+    <class name="PhenomenonEntity" table="phenomenon">
+        <comment>Storage of the phenomenon/observableProperties</comment>
+        <id name="id" type="long">
+            <column name="phenomenon_id">
+                <comment>PK column of the table</comment>
+            </column>
+            <generator class="native">
+                <param name="sequence_name">phenomenon_seq</param>
+            </generator>
+        </id>
+        <set name="parents" table="composite_phenomenon" inverse="false">
+            <comment>Storage of hierarchies between phenomenon, e.g. for composite phenomenon like weather with temperature, windspeed, ...</comment>
+            <key foreign-key="fk_phenomenon_child">
+                <column name="fk_child_phenomenon_id" not-null="true">
+                    <comment>Reference to the child phenomenon in phenomenon table.</comment>
+                </column>
+            </key>
+            <many-to-many class="PhenomenonEntity" foreign-key="fk_phenomenon_parent">
+                <column name="fk_parent_phenomenon_id" not-null="true">
+                    <comment>Reference to the parent phenomenon in phenomenon table.</comment>
+                </column>
+            </many-to-many>
+        </set>
+        <!-- Comments for the children are defined above for parents! -->
+        <set name="children" table="composite_phenomenon" inverse="false">
+            <key foreign-key="fk_phenomenon_parent">
+                <column name="fk_parent_phenomenon_id" not-null="true"/>
+            </key>
+            <many-to-many class="PhenomenonEntity" foreign-key="fk_phenomenon_child">
+                <column name="fk_child_phenomenon_id" not-null="true"/>
+            </many-to-many>
+        </set>
+    </class>
+</hibernate-mapping>

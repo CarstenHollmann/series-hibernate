@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hibernate-mapping package="org.n52.series.db.beans"
+    xmlns="http://www.hibernate.org/xsd/hibernate-mapping"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.hibernate.org/xsd/hibernate-mapping http://www.hibernate.org/xsd/hibernate-mapping/hibernate-mapping-4.0.xsd">
+    <class name="OfferingEntity" table="offering">
+        <comment>Storage of the offerings.</comment>
+        <id name="id" type="long">
+            <column name="offering_id">
+                <comment>PK column of the table</comment>
+            </column>
+            <generator class="native">
+                <param name="sequence_name">offering_seq</param>
+            </generator>
+        </id>
+
+        <set name="parents" table="offering_hierarchy" inverse="false" fetch="select">
+            <key not-null="true" foreign-key="fk_offering_child">
+                <column name="fk_child_offering_id">
+                    <comment>Reference to the child offering in offering table.</comment>
+                </column>
+            </key>
+            <many-to-many class="OfferingEntity" foreign-key="fk_offering_parent">
+                <column name="fk_parent_offering_id">
+                    <comment>Reference to the parent offering in offering table.</comment>
+                </column>
+            </many-to-many>
+        </set>
+        <!-- Comments for the children are defined above for parents! -->
+        <set name="children" table="offering_hierarchy" inverse="false" fetch="select">
+            <key column="fk_parent_offering_id" not-null="true" foreign-key="fk_offering_parent" />
+            <many-to-many class="OfferingEntity" column="fk_child_offering_id" foreign-key="fk_offering_child" />
+        </set>
+    </class>
+</hibernate-mapping>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hibernate-mapping package="org.n52.series.db.beans"
+    xmlns="http://www.hibernate.org/xsd/hibernate-mapping"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.hibernate.org/xsd/hibernate-mapping http://www.hibernate.org/xsd/hibernate-mapping/hibernate-mapping-4.0.xsd">
+    <class name="ProcedureEntity" table="`procedure`">
+        <comment>Storage of the procedure/sensors.</comment>
+        <id name="id" type="long">
+            <column name="procedure_id">
+                <comment>PK column of the table</comment>
+            </column>
+            <generator class="native">
+                <param name="sequence_name">procedure_seq</param>
+            </generator>
+        </id>
+        <set name="parents" table="procedure_hierarchy" inverse="false" fetch="select">
+            <comment>Storage of hierarchies between procedures</comment>
+            <key not-null="true" foreign-key="fk_procedure_child">
+                <column name="fk_child_procedure_id">
+                    <comment>Reference to the child procedure in procedure table.</comment>
+                </column>
+            </key>
+            <many-to-many class="ProcedureEntity" foreign-key="fk_procedure_parent">
+                <column name="fk_parent_procedure_id">
+                    <comment>Reference to the parent procedure in procedure table.</comment>
+                </column>
+            </many-to-many>
+        </set>
+        <!-- Comments for the children are defined above for parents! -->
+        <set name="children" table="procedure_hierarchy" inverse="false" fetch="select">
+            <key column="fk_parent_procedure_id" not-null="true" foreign-key="fk_procedure_parent" />
+            <many-to-many class="ProcedureEntity" column="fk_child_procedure_id" foreign-key="fk_procedure_child" />
+        </set>
+        <many-to-one name="format" class="FormatEntity" foreign-key="fk_procedure_format">
+            <column name="fk_format_id" not-null="true">
+                <comment>Reference to the format of the procedure description, e.g. SensorML 2.0</comment>
+            </column>
+        </many-to-one>
+    </class>
+</hibernate-mapping>

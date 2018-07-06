@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hibernate-mapping package="org.n52.series.db.beans"
+    xmlns="http://www.hibernate.org/xsd/hibernate-mapping"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.hibernate.org/xsd/hibernate-mapping http://www.hibernate.org/xsd/hibernate-mapping/hibernate-mapping-4.0.xsd">
+    <class name="DatasetEntity" table="dataset" check="value_type in ('quantity', 'count', 'text', 'category', 'boolean', 'quantity-profile', 'text-profile', 'category-profile', 'complex', 'dataarray', 'geometry', 'blob', 'referenced', 'not_initialized')">
+        <comment>Storage of the dataset, the core table of the whole database model.</comment>
+        <id name="id" type="long">
+            <column name="dataset_id">
+                <comment>PK column of the table</comment>
+            </column>
+            <generator class="native">
+                <param name="sequence_name">dataset_seq</param>
+            </generator>
+        </id>
+
+        <set inverse="false" name="parameters" table="dataset_parameter" cascade="delete-orphan">
+            <comment>Storage of relations between dataset and related parameter</comment>
+            <key not-null="true" foreign-key="fk_dataset_parameter">
+                <column name="fk_dataset_id">
+                    <comment>The reference to the dataset in the dataset table</comment>
+                </column>
+            </key>
+            <many-to-many class="org.n52.series.db.beans.parameter.Parameter" foreign-key="fk_parameter_dataset">
+                <column name="fk_parameter_id">
+                    <comment>The reference to the parameter in the dataset parameter</comment>
+                </column>
+            </many-to-many>
+        </set>
+    </class>
+</hibernate-mapping>

@@ -73,82 +73,10 @@
                 <comment>Flag that indicates if the procedure is insitu (1/true) or remote (0/false).</comment>
             </column>
         </property>
-        <set name="parents" table="procedure_hierarchy" inverse="false" fetch="select">
-            <comment>Storage of hierarchies between procedures</comment>
-            <key not-null="true" foreign-key="fk_procedure_child">
-                <column name="fk_child_procedure_id">
-                    <comment>Reference to the child procedure in procedure table.</comment>
-                </column>
-            </key>
-            <many-to-many class="ProcedureEntity" foreign-key="fk_procedure_parent">
-                <column name="fk_parent_procedure_id">
-                    <comment>Reference to the parent procedure in procedure table.</comment>
-                </column>
-            </many-to-many>
-        </set>
-        <!-- Comments for the children are defined above for parents! -->
-        <set name="children" table="procedure_hierarchy" inverse="false" fetch="select">
-            <key column="fk_parent_procedure_id" not-null="true" foreign-key="fk_procedure_parent" />
-            <many-to-many class="ProcedureEntity" column="fk_child_procedure_id" foreign-key="fk_procedure_child" />
-        </set>
         <many-to-one name="format" class="FormatEntity" foreign-key="fk_procedure_format">
             <column name="fk_format_id" not-null="true">
                 <comment>Reference to the format of the procedure description, e.g. SensorML 2.0</comment>
             </column>
         </many-to-one>
-        <!-- Comments for the procedureHistory are defined in the ProcedureHistoryResources.hbm.xml! -->
-        <set name="procedureHistory" table="procedure_history" inverse="true">
-            <key foreign-key="fk_procedure_history">
-                <column name="fk_procedure_id" not-null="true" />
-            </key>
-            <one-to-many class="ProcedureHistoryEntity" />
-        </set>
-        <!-- Comments for the translations are defined below! -->
-        <set name="translations" table="procedure_i18n" inverse="true" fetch="select">
-            <key column="fk_procedure_id" not-null="true" />
-            <one-to-many class="org.n52.series.db.beans.i18n.I18nProcedureEntity" />
-        </set>
-    </class>
-
-    <class name="org.n52.series.db.beans.i18n.I18nProcedureEntity" table="procedure_i18n">
-        <comment>Storage for internationalizations of procedures.</comment>
-        <id name="id" type="long">
-            <column name="procedure_i18n_id">
-                <comment>PK column of the table</comment>
-            </column>
-            <generator class="native">
-                <param name="sequence_name">procedure_i18n_seq</param>
-            </generator>
-        </id>
-		<many-to-one name="entity" class="ProcedureEntity" foreign-key="fk_i18n_procedure">
-            <column name="fk_procedure_id" not-null="true">
-                <comment>Reference to the procedure table this internationalization belongs to.</comment>
-            </column>
-        </many-to-one>
-        <property name="locale" not-null="true" type="string">
-            <column name="locale">
-                <comment>Locale/language specification for this entry</comment>
-            </column>
-        </property>
-        <property name="name" type="string">
-            <column name="name">
-                <comment>Locale/language specific name of the procedure</comment>
-            </column>
-        </property>
-        <property name="description" type="string">
-            <column name="description">
-                <comment>Locale/language specific description of the procedure</comment>
-            </column>
-        </property>
-        <property name="shortName" type="string">
-            <column name="short_name">
-                <comment>Locale/language specific shortname of the procedure</comment>
-            </column>
-        </property>
-        <property name="longName" type="string">
-            <column name="long_name">
-                <comment>Locale/language specific longname of the procedure</comment>
-            </column>
-        </property>
     </class>
 </hibernate-mapping>

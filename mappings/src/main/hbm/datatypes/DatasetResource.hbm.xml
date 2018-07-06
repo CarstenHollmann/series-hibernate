@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hibernate-mapping package="org.n52.series.db.beans"
+    xmlns="http://www.hibernate.org/xsd/hibernate-mapping"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.hibernate.org/xsd/hibernate-mapping http://www.hibernate.org/xsd/hibernate-mapping/hibernate-mapping-4.0.xsd">
+    <subclass discriminator-value="blob" extends="DatasetEntity" name="BlobDatasetEntity">
+        <many-to-one class="BlobDataEntity" column="fk_first_observation_id" name="firstObservation" fetch="select" foreign-key="fk_dataset_first_obs"/>
+        <many-to-one class="BlobDataEntity" column="fk_last_observation_id" name="lastObservation" fetch="select" foreign-key="fk_dataset_last_obs"/>
+    </subclass>
+    <subclass discriminator-value="dataarray" extends="DatasetEntity" name="DataArrayDatasetEntity">
+        <many-to-one class="DataArrayDataEntity" column="fk_first_observation_id" name="firstObservation" fetch="select" foreign-key="fk_dataset_first_obs"/>
+        <many-to-one class="DataArrayDataEntity" column="fk_last_observation_id" name="lastObservation" fetch="select" foreign-key="fk_dataset_last_obs"/>
+    </subclass>
+    <subclass discriminator-value="complex" extends="DatasetEntity" name="ComplexDatasetEntity">
+        <many-to-one class="ComplexDataEntity" column="fk_first_observation_id" name="firstObservation" fetch="select" foreign-key="fk_dataset_first_obs"/>
+        <many-to-one class="ComplexDataEntity" column="fk_last_observation_id" name="lastObservation" fetch="select" foreign-key="fk_dataset_last_obs"/>
+    </subclass>
+    <subclass discriminator-value="quantity-profile" extends="DatasetEntity" name="QuantityProfileDatasetEntity">
+        <many-to-one class="UnitEntity" column="fk_unit_id" name="unit" foreign-key="fk_dataset_unit" />
+        <many-to-one class="ProfileDataEntity" column="fk_first_observation_id" name="firstObservation" fetch="select" foreign-key="fk_dataset_first_obs"/>
+        <many-to-one class="ProfileDataEntity" column="fk_last_observation_id" name="lastObservation" fetch="select" foreign-key="fk_dataset_last_obs"/>
+        <property name="verticalParameterName" formula="'depth'" type="string" />
+    </subclass>
+    <subclass discriminator-value="category-profile" extends="DatasetEntity" name="CategoryProfileDatasetEntity">
+        <many-to-one class="UnitEntity" column="fk_unit_id" name="unit" foreign-key="fk_dataset_unit" />
+        <many-to-one class="ProfileDataEntity" column="fk_first_observation_id" name="firstObservation" fetch="select" foreign-key="fk_dataset_first_obs"/>
+        <many-to-one class="ProfileDataEntity" column="fk_last_observation_id" name="lastObservation" fetch="select" foreign-key="fk_dataset_last_obs"/>
+        <property name="verticalParameterName" formula="'depth'" type="string" />
+    </subclass>
+    <subclass discriminator-value="text-profile" extends="DatasetEntity" name="TextProfileDatasetEntity">
+        <many-to-one class="ProfileDataEntity" column="fk_first_observation_id" name="firstObservation" fetch="select" foreign-key="fk_dataset_first_obs"/>
+        <many-to-one class="ProfileDataEntity" column="fk_last_observation_id" name="lastObservation" fetch="select" foreign-key="fk_dataset_last_obs"/>
+        <property name="verticalParameterName" formula="'depth'" type="string" />
+    </subclass>
+</hibernate-mapping>

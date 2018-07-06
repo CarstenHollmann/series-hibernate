@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<hibernate-mapping package="org.n52.series.db.beans"
+    xmlns="http://www.hibernate.org/xsd/hibernate-mapping"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.hibernate.org/xsd/hibernate-mapping http://www.hibernate.org/xsd/hibernate-mapping/hibernate-mapping-4.0.xsd">
+        <subclass discriminator-value="text" extends="DatasetEntity" name="TextDatasetEntity">
+            <many-to-one class="TextDataEntity" column="fk_first_observation_id" name="firstObservation" fetch="select" foreign-key="fk_dataset_first_obs"/>
+            <many-to-one class="TextDataEntity" column="fk_last_observation_id" name="lastObservation" fetch="select" foreign-key="fk_dataset_last_obs"/>
+        </subclass>
+        <subclass discriminator-value="referenced" extends="DatasetEntity" name="ReferencedDatasetEntity">
+            <many-to-one class="ReferencedDataEntity" column="fk_first_observation_id" name="firstObservation" fetch="select" foreign-key="fk_dataset_first_obs"/>
+            <many-to-one class="ReferencedDataEntity" column="fk_last_observation_id" name="lastObservation" fetch="select" foreign-key="fk_dataset_last_obs"/>
+        </subclass>
+        <subclass discriminator-value="count" extends="DatasetEntity" name="CountDatasetEntity">
+            <many-to-one class="CountDataEntity" column="fk_first_observation_id" name="firstObservation" fetch="select" foreign-key="fk_dataset_first_obs"/>
+            <many-to-one class="CountDataEntity" column="fk_last_observation_id" name="lastObservation" fetch="select" foreign-key="fk_dataset_last_obs"/>
+        </subclass>
+        <subclass discriminator-value="boolean" extends="DatasetEntity" name="BooleanDatasetEntity">
+            <many-to-one class="BooleanDataEntity" column="fk_first_observation_id" name="firstObservation" fetch="select" foreign-key="fk_dataset_first_obs"/>
+            <many-to-one class="BooleanDataEntity" column="fk_last_observation_id" name="lastObservation" fetch="select" foreign-key="fk_dataset_last_obs"/>
+        </subclass>
+        <subclass discriminator-value="category" extends="DatasetEntity" name="CategoryDatasetEntity">
+            <many-to-one class="UnitEntity" column="fk_unit_id" name="unit" foreign-key="fk_dataset_unit" />
+            <many-to-one class="CategoryDataEntity" column="fk_first_observation_id" name="firstObservation" fetch="select" foreign-key="fk_dataset_first_obs"/>
+            <many-to-one class="CategoryDataEntity" column="fk_last_observation_id" name="lastObservation" fetch="select" foreign-key="fk_dataset_last_obs"/>
+        </subclass>
+        <subclass discriminator-value="geometry" extends="DatasetEntity" name="GeometryDatasetEntity">
+            <many-to-one class="GeometryDataEntity" column="fk_first_observation_id" name="firstObservation" fetch="select" foreign-key="fk_dataset_first_obs"/>
+            <many-to-one class="GeometryDataEntity" column="fk_last_observation_id" name="lastObservation" fetch="select" foreign-key="fk_dataset_last_obs"/>
+        </subclass>
+</hibernate-mapping>
