@@ -65,6 +65,9 @@ import org.joda.time.format.DateTimeFormat;
 import org.n52.hibernate.type.SmallBooleanType;
 import org.xml.sax.SAXException;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+
 //import hibernate.spatial.dialect.oracle.OracleSpatial10gDoubleFloatDialect;
 
 // https://github.com/atteo/xml-combiner
@@ -322,6 +325,7 @@ public class SQLScriptGenerator {
         return new LinkedHashSet<>(checkedSchema);
     }
 
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private void combine(List<Path> files)
             throws IOException, TransformerException, ParserConfigurationException, SAXException {
         XmlCombiner combiner = new XmlCombiner();
@@ -329,7 +333,8 @@ public class SQLScriptGenerator {
         if (files != null) {
             for (Path path : files) {
                 if (path != null && !Files.isDirectory(path)) {
-                    if (fileName.isEmpty()) {
+                    if (fileName.isEmpty() && path.getFileName() != null
+                            && path.getFileName().toString() != null && !path.getFileName().toString().isEmpty()) {
                         fileName = path.getFileName().toString();
                     }
                     combiner.combine(path);
@@ -345,7 +350,7 @@ public class SQLScriptGenerator {
             path = Files.createFile(path);
             combiner.buildDocument(path);
         }
-        
+
     }
 
     public void getAllFiles(File file, List<Path> files) {
