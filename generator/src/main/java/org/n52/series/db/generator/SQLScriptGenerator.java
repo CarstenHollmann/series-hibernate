@@ -70,8 +70,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 //import hibernate.spatial.dialect.oracle.OracleSpatial10gDoubleFloatDialect;
 
-// https://github.com/atteo/xml-combiner
-
 /**
  * Class to generate the create and drop scripts for different databases.
  * Currently supported spatial databases to create scripts
@@ -88,7 +86,17 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  */
 public class SQLScriptGenerator {
 
+    private final Path dir;
+
     private SQLScriptGenerator() {
+        dir = Paths.get("target/test");
+        try {
+           if (!Files.exists(Paths.get("target/test"))) {
+                Files.createDirectories(Paths.get("target/test"));
+           }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 
@@ -202,17 +210,18 @@ public class SQLScriptGenerator {
             }
 
         } catch (IOException | URISyntaxException | TransformerException | ParserConfigurationException
-                | SAXException e1) {
+                | SAXException e) {
+            System.out.println(e);
         }
     }
 
     private void add(Configuration configuration, MetadataSources metadataSources)
             throws MappingException, URISyntaxException {
         if (configuration != null) {
-            configuration.addDirectory(new File(Paths.get("target/test").toAbsolutePath().toString()));
+            configuration.addDirectory(new File(dir.toAbsolutePath().toString()));
         }
         if (metadataSources != null) {
-            metadataSources.addDirectory(new File(Paths.get("target/test").toAbsolutePath().toString()));
+            metadataSources.addDirectory(new File(dir.toAbsolutePath().toString()));
         }
     }
 
@@ -341,10 +350,6 @@ public class SQLScriptGenerator {
                 }
             }
         }
-        Path dir = Paths.get("target/test");
-        if (!Files.exists(dir)) {
-            dir = Files.createDirectories(Paths.get("target/test"));
-        }
         Path path = Paths.get(dir.toString(), fileName);
         if (!Files.exists(path)) {
             path = Files.createFile(path);
@@ -374,7 +379,6 @@ public class SQLScriptGenerator {
         SQLScriptGenerator sqlScriptGenerator = new SQLScriptGenerator();
 
         try {
-            // Files.deleteIfExists(Paths.get("target/test"));
             int select = sqlScriptGenerator.getSelection();
             if (select == 1) {
                 String schema = "public";
