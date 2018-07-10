@@ -3,18 +3,7 @@
     xmlns="http://www.hibernate.org/xsd/hibernate-mapping"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.hibernate.org/xsd/hibernate-mapping http://www.hibernate.org/xsd/hibernate-mapping/hibernate-mapping-4.0.xsd">
-    <class name="DataEntity" table="observation" check="value_type in ('quantity', 'count', 'text', 'category', 'boolean', 'profile', 'complex', 'dataarray', 'geometry', 'blob', 'referenced')">
-        <comment>Storage of the data/observation values.</comment>
-        <id name="id" type="long">
-            <column name="observation_id">
-                <comment>PK column of the table</comment>
-            </column>
-            <generator class="native">
-                <param name="sequence_name">observation_seq</param>
-            </generator>
-        </id>
-
-        <!-- Or add only to specific subclasses -->
+    <class name="DataEntity">
         <set inverse="true" name="parameters" table="observation_parameter" cascade="all" fetch="join">
             <comment>Storage of relations between data/observation and related parameter</comment>
             <key not-null="true" foreign-key="fk_observation_parameter">

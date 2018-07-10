@@ -3,17 +3,7 @@
     xmlns="http://www.hibernate.org/xsd/hibernate-mapping"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.hibernate.org/xsd/hibernate-mapping http://www.hibernate.org/xsd/hibernate-mapping/hibernate-mapping-4.0.xsd">
-    <class name="AbstractFeatureEntity" abstract="true" table="feature">
-        <comment>Storage of the features (OfInterest).</comment>
-        <id name="id" type="long">
-            <column name="feature_id">
-                <comment>PK column of the table</comment>
-            </column>
-            <generator class="native">
-                <param name="sequence_name">feature_seq</param>
-            </generator>
-        </id>
-
+    <class name="AbstractFeatureEntity">
         <set name="parents" table="feature_hierarchy" inverse="false" fetch="select">
             <comment>Storage of hierarchies between features</comment>
             <key not-null="true" foreign-key="fk_feature_child">

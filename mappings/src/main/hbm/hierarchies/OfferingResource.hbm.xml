@@ -3,17 +3,7 @@
     xmlns="http://www.hibernate.org/xsd/hibernate-mapping"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.hibernate.org/xsd/hibernate-mapping http://www.hibernate.org/xsd/hibernate-mapping/hibernate-mapping-4.0.xsd">
-    <class name="OfferingEntity" table="offering">
-        <comment>Storage of the offerings.</comment>
-        <id name="id" type="long">
-            <column name="offering_id">
-                <comment>PK column of the table</comment>
-            </column>
-            <generator class="native">
-                <param name="sequence_name">offering_seq</param>
-            </generator>
-        </id>
-
+    <class name="OfferingEntity">
         <set name="parents" table="offering_hierarchy" inverse="false" fetch="select">
             <key not-null="true" foreign-key="fk_offering_child">
                 <column name="fk_child_offering_id">
