@@ -179,12 +179,14 @@ public class SQLScriptGenerator {
             processFiles("core", "dataset", "referencedDataset", "translations");
             break;
         case FullWithoutFeature:
-            processFiles("core", "dataset", "datatypes", "expandedDataset", "hierarchies", "metadata", "parameter",
-                    "procedureHistory", "referencedDataset", "relations", "transactional", "translations");
+            processFiles("core", "dataset", "datatypes", "expandedDataset", "hierarchies", "hierarchiesPhenomenon",
+                    "metadata", "parameter", "procedureHistory", "referencedDataset", "relations", "transactional",
+                    "translations");
             break;
         case Full:
-            processFiles("core", "dataset", "datatypes", "expandedDataset", "hierarchies", "metadata", "parameter",
-                    "procedureHistory", "referencedDataset", "relations", "transactional", "translations", "feature");
+            processFiles("core", "dataset", "datatypes", "expandedDataset", "hierarchies", "hierarchiesPhenomenon",
+                    "metadata", "parameter", "procedureHistory", "referencedDataset", "relations", "transactional",
+                    "translations", "feature");
             break;
         default:
             throw new Exception("The entered value is invalid: " + concept);
